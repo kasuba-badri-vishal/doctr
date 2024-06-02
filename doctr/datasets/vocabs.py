@@ -4,6 +4,7 @@
 # See LICENSE or go to <https://opensource.org/licenses/Apache-2.0> for full license details.
 
 import string
+import json
 from typing import Dict
 
 __all__ = ["VOCABS"]
@@ -287,7 +288,7 @@ VOCABS['indic'] = ''.join(sorted(list(set(VOCABS['indic']))))
 # print(len(VOCABS['indic']))
 
 
-# Save all dictionary key and lengths of values in json file
-with open('vocab_lengths.json', 'w') as f:
-    json.dump({k: len(v) for k, v in VOCABS.items()}, f)
+# Save all dictionary key and lengths of values in a sorted json file
+with open('vocab_lengths_sorted.json', 'w') as f:
+    json.dump({k: len(v) for k, v in VOCABS.items()}, f, indent=4, sort_keys=True)
     
