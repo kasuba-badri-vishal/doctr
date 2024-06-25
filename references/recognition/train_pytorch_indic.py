@@ -205,7 +205,7 @@ def main(args):
         val_set = RecognitionDataset(
             img_folder=os.path.join(args.val_path, "images"),
             labels_path=os.path.join(args.val_path, "labels.json"),
-            img_transforms=T.Resize((args.input_size, 3 * args.input_size), preserve_aspect_ratio=True),
+            img_transforms=T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
         )
     else:
         val_hash = None
@@ -217,7 +217,7 @@ def main(args):
             num_samples=args.val_samples * len(vocab),
             font_family=fonts,
             img_transforms=Compose([
-                T.Resize((args.input_size, 3 * args.input_size), preserve_aspect_ratio=True),
+                T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
                 # Ensure we have a 90% split of white-background images
                 T.RandomApply(T.ColorInversion(), 0.9),
             ]),
@@ -286,7 +286,7 @@ def main(args):
             parts[0].joinpath("images"),
             parts[0].joinpath("labels.json"),
             img_transforms=Compose([
-                T.Resize((args.input_size, 3 * args.input_size), preserve_aspect_ratio=True),
+                T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
                 # Augmentations
                 T.RandomApply(T.ColorInversion(), 0.1),
                 RandomGrayscale(p=0.1),
@@ -312,7 +312,7 @@ def main(args):
             num_samples=args.train_samples * len(vocab),
             font_family=fonts,
             img_transforms=Compose([
-                T.Resize((args.input_size, 3 * args.input_size), preserve_aspect_ratio=True),
+                T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
                 # Ensure we have a 90% split of white-background images
                 T.RandomApply(T.ColorInversion(), 0.9),
                 RandomGrayscale(p=0.1),
@@ -372,7 +372,7 @@ def main(args):
     if args.wb:
         run = wandb.init(
             name=exp_name,
-            project="final-text-recognition",
+            project="bhashini-text-recognition",
             config={
                 "learning_rate": args.lr,
                 "epochs": args.epochs,
@@ -402,7 +402,7 @@ def main(args):
         val_loss, exact_match, partial_match = evaluate(model, val_loader, batch_transforms, val_metric, amp=args.amp)
         if val_loss < min_loss:
             print(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
-            torch.save(model.state_dict(), f"./../models/{exp_name}.pt")
+            torch.save(model, f"./../models/{exp_name}.pt")
             min_loss = val_loss
         print(
             f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "
