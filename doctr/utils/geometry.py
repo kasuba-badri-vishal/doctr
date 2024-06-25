@@ -25,6 +25,7 @@ __all__ = [
     "rotate_abs_geoms",
     "extract_crops",
     "extract_rcrops",
+    "detach_scores",
 ]
 
 
@@ -57,6 +58,28 @@ def polygon_to_bbox(polygon: Polygon4P) -> BoundingBox:
     return (min(x), min(y)), (max(x), max(y))
 
 
+def detach_scores(boxes: List[np.ndarray]) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    """Detach the objectness scores from box predictions
+
+    Args:
+    ----
+        boxes: list of arrays with boxes of shape (N, 5) or (N, 5, 2)
+
+    Returns:
+    -------
+        a tuple of two lists: the first one contains the boxes without the objectness scores,
+        the second one contains the objectness scores
+    """
+
+    def _detach(boxes: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        if boxes.ndim == 2:
+            return boxes[:, :-1], boxes[:, -1]
+        return boxes[:, :-1], boxes[:, -1, -1]
+
+    loc_preds, obj_scores = zip(*(_detach(box) for box in boxes))
+    return list(loc_preds), list(obj_scores)
+
+
 def resolve_enclosing_bbox(bboxes: Union[List[BoundingBox], np.ndarray]) -> Union[BoundingBox, np.ndarray]:
     """Compute enclosing bbox either from:
 
@@ -64,18 +87,18 @@ def resolve_enclosing_bbox(bboxes: Union[List[BoundingBox], np.ndarray]) -> Unio
     ----
         bboxes: boxes in one of the following formats:
 
-            - an array of boxes: (*, 5), where boxes have this shape:
-            (xmin, ymin, xmax, ymax, score)
+            - an array of boxes: (*, 4), where boxes have this shape:
+            (xmin, ymin, xmax, ymax)
 
             - a list of BoundingBox
 
     Returns:
     -------
-        a (1, 5) array (enclosing boxarray), or a BoundingBox
+        a (1, 4) array (enclosing boxarray), or a BoundingBox
     """
     if isinstance(bboxes, np.ndarray):
-        xmin, ymin, xmax, ymax, score = np.split(bboxes, 5, axis=1)
-        return np.array([xmin.min(), ymin.min(), xmax.max(), ymax.max(), score.mean()])
+        xmin, ymin, xmax, ymax = np.split(bboxes, 4, axis=1)
+        return np.array([xmin.min(), ymin.min(), xmax.max(), ymax.max()])
     else:
         x, y = zip(*[point for box in bboxes for point in box])
         return (min(x), min(y)), (max(x), max(y))
@@ -88,21 +111,21 @@ def resolve_enclosing_rbbox(rbboxes: List[np.ndarray], intermed_size: int = 1024
     ----
         rbboxes: boxes in one of the following formats:
 
-            - an array of boxes: (*, 5), where boxes have this shape:
-            (xmin, ymin, xmax, ymax, score)
+            - an array of boxes: (*, 4, 2), where boxes have this shape:
+            (x1, y1), (x2, y2), (x3, y3), (x4, y4)
 
             - a list of BoundingBox
         intermed_size: size of the intermediate image
 
     Returns:
     -------
-        a (1, 5) array (enclosing boxarray), or a BoundingBox
+        a (4, 2) array (enclosing rotated box)
     """
     cloud: np.ndarray = np.concatenate(rbboxes, axis=0)
     # Convert to absolute for minAreaRect
     cloud *= intermed_size
     rect = cv2.minAreaRect(cloud.astype(np.int32))
-    return cv2.boxPoints(rect) / intermed_size  # type: ignore[operator]
+    return cv2.boxPoints(rect) / intermed_size  # type: ignore[return-value]
 
 
 def rotate_abs_points(points: np.ndarray, angle: float = 0.0) -> np.ndarray:
@@ -232,7 +255,7 @@ def rotate_boxes(
 
     Args:
     ----
-        loc_preds: (N, 5) or (N, 4, 2) array of RELATIVE boxes
+        loc_preds: (N, 4) or (N, 4, 2) array of RELATIVE boxes
         angle: angle between -90 and +90 degrees
         orig_shape: shape of the origin image
         min_angle: minimum angle to rotate boxes
@@ -320,7 +343,7 @@ def rotate_image(
             # Pad height
             else:
                 h_pad, w_pad = int(rot_img.shape[1] * image.shape[0] / image.shape[1] - rot_img.shape[0]), 0
-            rot_img = np.pad(rot_img, ((h_pad // 2, h_pad - h_pad // 2), (w_pad // 2, w_pad - w_pad // 2), (0, 0)))
+            rot_img = np.pad(rot_img, ((h_pad // 2, h_pad - h_pad // 2), (w_pad // 2, w_pad - w_pad // 2), (0, 0)))  # type: ignore[assignment]
         if preserve_origin_shape:
             # rescale
             rot_img = cv2.resize(rot_img, image.shape[:-1][::-1], interpolation=cv2.INTER_LINEAR)
@@ -453,4 +476,4 @@ def extract_rcrops(
         )
         for idx in range(_boxes.shape[0])
     ]
-    return crops
+    return crops  # type: ignore[return-value]

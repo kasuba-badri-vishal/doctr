@@ -54,15 +54,15 @@ should yield
     "name": "117319856-fc35bf00-ae8b-11eb-9b51-ca5aba673466.jpg",
     "geometries": [
       [
-        0.724609375,
+        0.8176307908857315,
         0.1787109375,
-        0.7900390625,
+        0.9101580212741838,
         0.2080078125
       ],
       [
-        0.6748046875,
+        0.7471996155154171,
         0.1796875,
-        0.7314453125,
+        0.8272978149561669,
         0.20703125
       ]
     ]
@@ -147,6 +147,7 @@ should yield
               0.9101580212741838,
               0.2080078125
             ],
+            "objectness_score": 0.5,
             "lines": [
               {
                 "geometry": [
@@ -155,6 +156,7 @@ should yield
                   0.9101580212741838,
                   0.2080078125
                 ],
+                "objectness_score": 0.5,
                 "words": [
                   {
                     "value": "Hello",
@@ -164,6 +166,7 @@ should yield
                       0.8272978149561669,
                       0.20703125
                     ],
+                    "objectness_score": 0.5,
                     "confidence": 1.0,
                     "crop_orientation": {"value": 0, "confidence": null}
                   },
@@ -175,6 +178,7 @@ should yield
                       0.9101580212741838,
                       0.2080078125
                     ],
+                    "objectness_score": 0.5,
                     "confidence": 1.0,
                     "crop_orientation": {"value": 0, "confidence": null}
                   }
