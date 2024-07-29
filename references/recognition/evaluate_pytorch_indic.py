@@ -106,8 +106,10 @@ def main(args):
     if isinstance(args.resume, str):
         print(f"Resuming {args.resume}")
         checkpoint = torch.load(args.resume, map_location="cpu")
-        # model.load(checkpoint)
-        model = checkpoint
+        try:
+            model.load_state_dict(checkpoint)
+        except:
+            model = checkpoint
 
     st = time.time()
     

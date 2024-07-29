@@ -243,7 +243,10 @@ def main(args):
     if isinstance(args.resume, str):
         print(f"Resuming {args.resume}")
         checkpoint = torch.load(args.resume, map_location="cpu")
-        model.load_state_dict(checkpoint)
+        try:
+            model.load_state_dict(checkpoint)
+        except:
+            model = checkpoint
 
     # GPU
     if isinstance(args.device, int):
