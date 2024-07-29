@@ -1,9 +1,11 @@
 import argparse
-from PIL import ImageFont, Image, ImageDraw, ImageFilter
-import random
-import os
-import numpy as np
 import json
+import os
+import random
+import numpy as np
+from tqdm import tqdm
+from PIL import ImageFont, Image, ImageDraw, ImageFilter
+
 
 class DataImage:
     def __init__(self, image, background_color, color):
@@ -21,7 +23,7 @@ class Generator:
             raise FileNotFoundError(f"{word_file} does not exist")
         
         if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
+            os.makedirs(out_dir)
         if not os.path.exists(os.path.join(out_dir,"images")):
             os.mkdir(os.path.join(out_dir,"images"))
         
@@ -33,12 +35,15 @@ class Generator:
             raise FileNotFoundError(f"The directory {font_dir} does not exist.")
         if len(self.fonts)==0:
             raise Exception("Font Directory Empty")
-
+        
+        
     def generate(
             self, 
             font_sample_rate = 0.2, 
             font_size_range = [24,32],
-            random_color_rate = 0.5, 
+            random_color = False,
+            random_color_rate = 0.3,
+            invert_rate = 0.3,
             random_rotation_rate = 0.5,
             angle_deviation = 10,
             random_blur_rate = 0.5,
@@ -50,7 +55,8 @@ class Generator:
         
         labels = {}
         with open(self.word_file,encoding="utf-8") as f:
-            for i,word in enumerate(f):
+            for i,word in tqdm(enumerate(f)):
+                count = 0
                 word = word.strip()
                 fonts = self.sample_fonts(font_sample_rate)
                 if len(fonts)==0:
@@ -58,15 +64,22 @@ class Generator:
                 for f,font in enumerate(fonts):
 
                     # Sampling Color
-                    if self.doSample(random_color_rate):
+                    
+                    if random_color and self.doSample(random_color_rate):
                         bg,fg = self.generate_color()
                     else:
-                        bg,fg = (0,0,0), (255,255,255)
+                        if self.doSample(invert_rate):
+                            bg,fg = (0,255,0), (255,255,255)
+                        else:
+                            bg, fg = (255,255,255), (0,255,0)
+                        
                     
                     # Sampling Size
                     size = random.randint(*font_size_range)
-
-                    image = self.generate_base_image(word,font,size,bg,fg,5,ImageFont.Layout.RAQM)
+                    
+                    
+                    
+                    image = self.generate_base_image(word,font,size,bg,fg,(3,7),ImageFont.Layout.RAQM)
 
                     # Sampling Rotation
                     if self.doSample(random_rotation_rate):
@@ -75,25 +88,36 @@ class Generator:
                     # Sampling Blur
                     if self.doSample(random_blur_rate):
                         image = self.add_blur(image, blur_radius, blur_deviation)
-                    
+
                     # Sampling Noise
                     if self.doSample(random_noise_rate):
                         image = self.add_noise(image, noise_level)
-                    # print(font)
-                    img_path = f"img_{i}_{f}_{font.split('.')[0][-1]}.png"
+
+                    # Grayscale image
+                    image.image = image.image.convert("L")
+
+                    img_path = f"img_{i}_{count}.png"
+                    count +=1
                     image.image.save(os.path.join(self.out_dir,"images",img_path))
                     labels[img_path] = word
                 
-                if i % 20:
+                if i % 50 == 0:
                     with open(os.path.join(self.out_dir,"labels.json"), "w", encoding='utf-8') as label_file:
                         json.dump(labels,label_file, ensure_ascii=False, indent=4)
 
         with open(os.path.join(self.out_dir,"labels.json"), "w", encoding='utf-8') as label_file:
             json.dump(labels,label_file, ensure_ascii=False, indent=4)
     
-    def doSample(self,rate):
-        return random.random() <= rate
 
+    
+    def doSample(self, rate):
+        return random.random() < rate
+    
+    
+    def sample_fonts(self, font_sample_rate):
+        return random.sample(self.fonts, int(len(self.fonts) * font_sample_rate))
+        
+        
     def generate_base_image(
             self,
             text,
@@ -101,7 +125,7 @@ class Generator:
             font_size = 24,
             background_color = (0,0,0),
             text_color = (255,255,255),
-            padding = 5,
+            padding_size_range = [3,7],
             layout_engine = ImageFont.Layout.BASIC
     ):
 
@@ -109,6 +133,7 @@ class Generator:
         left, top, right, bottom = font.getbbox(text)
         text_w, text_h = right - left, bottom - top
 
+        padding = random.randint(*padding_size_range)
         h, w = text_h + padding * 2, text_w + padding * 2
         img_size = (h, w) if len(text) > 1 else (max(h, w), max(h, w))
 
@@ -119,7 +144,7 @@ class Generator:
         d.text(text_pos, text, font=font, fill=text_color)
 
         return DataImage(img, background_color, text_color)
-    
+        
     def rotate_image(self, image: DataImage, angle_deviation = 10):
         angle = random.gauss(0, angle_deviation)
         return image.new_from_properties(image.image.rotate(angle, expand=True, fillcolor=image.backgroung_color))
@@ -152,43 +177,50 @@ class Generator:
             else:
                 break
         return bg, fg
-
-    def sample_fonts(self, font_sample_rate):
-        return random.sample(self.fonts, int(len(self.fonts) * font_sample_rate))
+        
     
+
+
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Generate Image Data")
-    parser.add_argument("--word_file", type=str, help="Path to input data")
-    parser.add_argument("--font_dir", type=str, help="Path to fonts")
-    parser.add_argument("--out_dir", type=str, help="Path to output directory")
-
-    parser.add_argument("--font_sample_rate", type=float, default= 0.2, help="Subset of Font to pick for each word")
-    parser.add_argument("--font_size_start", type=int, default=24, help="Start of font size range")
-    parser.add_argument("--font_size_end", type=int, default=32, help="End of font size range")
-
+    
+    parser = argparse.ArgumentParser(description="Generate Images from Fonts and text files")
+    
+    parser.add_argument("--font_dir", type=str, default="./../akshara_fonts", help="Directory containing fonts")
+    parser.add_argument("--word_file", type=str, default="./../akshara_hindi.txt", help="Path to input data")
+    parser.add_argument("--out_dir", type=str, default="./../akshara_images", help="Path to output directory")
+    
+    
+    
+    
+    parser.add_argument("--font_sample_rate", type=float, default= 0.01, help="Subset of Font to pick for each word")
+    parser.add_argument("--font_size_start", type=int, default=16, help="Start of font size range")
+    parser.add_argument("--font_size_end", type=int, default=48, help="End of font size range")
+    
+    parser.add_argument("--invert_rate", type=float, default=0.3, help="Rate to apply invert")
+    parser.add_argument("--random_color", type=bool, default=False, help="Does color need to be randomly chosen")
     parser.add_argument("--random_color_rate", type=float, default=0.5, help="Rate to apply random color")
     
-    parser.add_argument("--random_rotation_rate", type=float, default=0.5, help="Rate to apply random rotation")
+    parser.add_argument("--random_rotation_rate", type=float, default=0.2, help="Rate to apply random rotation")
     parser.add_argument("--angle_deviation", type=float, default=10, help="Rotaion angle deviation")
-
-    parser.add_argument("--random_blur_rate", type=float, default=0.5, help="Rate to apply random blur")
+    
+    parser.add_argument("--random_blur_rate", type=float, default=0.2, help="Rate to apply random blur")
     parser.add_argument("--blur_radius", type=float, default=0, help="Blur Radius Mean")
     parser.add_argument("--blur_deviation", type=float, default=1, help="Blur Radius std")
-
-    parser.add_argument("--random_noise_rate", type=float, default=0.2, help="Rate to apply random noise")
+    
+    parser.add_argument("--random_noise_rate", type=float, default=0.05, help="Rate to apply random noise")
     parser.add_argument("--noise_level", type=float, default=1, help="Noise Level")
-
-
-    # parser.add_argument("--weighted",action='store_true',help="Specify weight breakpoints")
+    
     args = parser.parse_args()
     
     g = Generator(args.word_file, args.font_dir, args.out_dir)
+    
     g.generate(
         font_sample_rate= args.font_sample_rate,
         font_size_range= (args.font_size_start,  args.font_size_end),
-        random_color_rate= args.random_color_rate,
+        random_color = args.random_color,
+        random_color_rate = args.random_color_rate,
+        invert_rate= args.invert_rate,
         random_rotation_rate= args.random_rotation_rate,
         angle_deviation = args.angle_deviation,
         random_blur_rate = args.random_blur_rate,
@@ -197,5 +229,5 @@ if __name__ == "__main__":
         random_noise_rate = args.random_noise_rate,
         noise_level = args.noise_level
     )
-
+    
     print("Data Generated Successfully")
