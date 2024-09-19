@@ -31,7 +31,7 @@ class DocumentBuilder(NestedObject):
     def __init__(
         self,
         resolve_lines: bool = True,
-        resolve_blocks: bool = True,
+        resolve_blocks: bool = False,
         paragraph_break: float = 0.035,
         export_as_straight_boxes: bool = False,
     ) -> None:
@@ -266,7 +266,7 @@ class DocumentBuilder(NestedObject):
                 Line([
                     Word(
                         *word_preds[idx],
-                        tuple([tuple(pt) for pt in boxes[idx].tolist()]),  # type: ignore[arg-type]
+                        tuple(tuple(pt) for pt in boxes[idx].tolist()),  # type: ignore[arg-type]
                         float(objectness_scores[idx]),
                         crop_orientations[idx],
                     )
@@ -500,7 +500,7 @@ class KIEDocumentBuilder(DocumentBuilder):
             Prediction(
                 value=word_preds[idx][0],
                 confidence=word_preds[idx][1],
-                geometry=tuple([tuple(pt) for pt in boxes[idx].tolist()]),  # type: ignore[arg-type]
+                geometry=tuple(tuple(pt) for pt in boxes[idx].tolist()),  # type: ignore[arg-type]
                 objectness_score=float(objectness_scores[idx]),
                 crop_orientation=crop_orientations[idx],
             )
