@@ -262,7 +262,9 @@ def main(args):
     if torch.cuda.is_available():
         torch.cuda.set_device(args.device)
         model = model.cuda()
-
+        
+    # Print number of parameters
+    print(f"Number of parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
     # Metrics
     val_metric = TextMatch()
 
