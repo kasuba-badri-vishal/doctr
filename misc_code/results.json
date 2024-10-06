@@ -1,0 +1,10 @@
+{
+    "tamil_crnn_vgg16_bn_handwritten_ihtr": [
+        3.59,
+        17.61
+    ],
+    "tamil_master_handwritten_ihtr": [
+        3.21,
+        12.53
+    ]
+}
