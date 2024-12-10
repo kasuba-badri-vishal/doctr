@@ -92,12 +92,12 @@ Detection predictors
 
     import numpy as np
     from doctr.models import detection_predictor
-    predictor = detection_predictor('db_resnet50')
+    model = detection_predictor('db_resnet50')
     dummy_img = (255 * np.random.rand(800, 600, 3)).astype(np.uint8)
     out = model([dummy_img])
 
 You can pass specific boolean arguments to the predictor:
-
+* `pretrained`: if you want to use a model that has been pretrained on a specific dataset, setting `pretrained=True` this will load the corresponding weights. If `pretrained=False`, which is the default, would otherwise lead to a random initialization and would lead to no/useless results.
 * `assume_straight_pages`: if you work with straight documents only, it will fit straight bounding boxes to the text areas.
 * `preserve_aspect_ratio`: if you want to preserve the aspect ratio of your documents while resizing before sending them to the model.
 * `symmetric_pad`: if you choose to preserve the aspect ratio, it will pad the image symmetrically and not from the bottom-right.
@@ -198,7 +198,7 @@ Recognition predictors
 
     import numpy as np
     from doctr.models import recognition_predictor
-    predictor = recognition_predictor('crnn_vgg16_bn')
+    model = recognition_predictor('crnn_vgg16_bn')
     dummy_img = (255 * np.random.rand(50, 150, 3)).astype(np.uint8)
     out = model([dummy_img])
 
@@ -298,7 +298,7 @@ For instance, this snippet instantiates an end-to-end ocr_predictor working with
 
 .. code:: python3
 
-    from doctr.model import ocr_predictor
+    from doctr.models import ocr_predictor
     model = ocr_predictor('linknet_resnet18', pretrained=True, assume_straight_pages=False, preserve_aspect_ratio=True)
 
 
@@ -309,7 +309,7 @@ Additionally, you can change the batch size of the underlying detection and reco
 
 .. code:: python3
 
-    from doctr.model import ocr_predictor
+    from doctr.models import ocr_predictor
     model = ocr_predictor(pretrained=True, det_bs=4, reco_bs=1024)
 
 To modify the output structure you can pass the following arguments to the predictor which will be handled by the underlying `DocumentBuilder`:
@@ -322,7 +322,7 @@ For example to disable the automatic grouping of lines into blocks:
 
 .. code:: python3
 
-    from doctr.model import ocr_predictor
+    from doctr.models import ocr_predictor
     model = ocr_predictor(pretrained=True, resolve_blocks=False)
 
 
@@ -477,7 +477,7 @@ This will only have an effect with `assume_straight_pages=False` and/or `straigh
 
 .. code:: python3
 
-    from doctr.model import ocr_predictor
+    from doctr.models import ocr_predictor
     model = ocr_predictor(pretrained=True, assume_straight_pages=False, disable_page_orientation=True)
 
 
@@ -489,7 +489,7 @@ This will only have an effect with `assume_straight_pages=False` and/or `straigh
 
 .. code:: python3
 
-    from doctr.model import ocr_predictor
+    from doctr.models import ocr_predictor
     model = ocr_predictor(pretrained=True, assume_straight_pages=False, disable_crop_orientation=True)
 
 
@@ -497,7 +497,7 @@ This will only have an effect with `assume_straight_pages=False` and/or `straigh
 
 .. code:: python3
 
-    from doctr.model import ocr_predictor
+    from doctr.models import ocr_predictor
 
     class CustomHook:
         def __call__(self, loc_preds):

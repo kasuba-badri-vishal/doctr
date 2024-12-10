@@ -6,7 +6,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -17,9 +17,10 @@ __all__ = ["WILDRECEIPT"]
 
 
 class WILDRECEIPT(AbstractDataset):
-    """WildReceipt dataset from `"Spatial Dual-Modality Graph Reasoning for Key Information Extraction"
-        <https://arxiv.org/abs/2103.14470v1>`_ |
-    `repository <https://download.openmmlab.com/mmocr/data/wildreceipt.tar>`_.
+    """
+    WildReceipt dataset from `"Spatial Dual-Modality Graph Reasoning for Key Information Extraction"
+    <https://arxiv.org/abs/2103.14470v1>`_ |
+    `"repository" <https://download.openmmlab.com/mmocr/data/wildreceipt.tar>`_.
 
     .. image:: https://doctr-static.mindee.com/models?id=v0.7.0/wildreceipt-dataset.jpg&src=0
         :align: center
@@ -34,7 +35,6 @@ class WILDRECEIPT(AbstractDataset):
     >>> img, target = test_set[0]
 
     Args:
-    ----
         img_folder: folder with all the images of the dataset
         label_path: path to the annotations file of the dataset
         train: whether the subset should be the training one
@@ -71,13 +71,13 @@ class WILDRECEIPT(AbstractDataset):
         tmp_root = img_folder
         self.train = train
         np_dtype = np.float32
-        self.data: List[Tuple[Union[str, Path, np.ndarray], Union[str, Dict[str, Any], np.ndarray]]] = []
+        self.data: list[tuple[str | Path | np.ndarray, str | dict[str, Any] | np.ndarray]] = []
 
         with open(label_path, "r") as file:
             data = file.read()
         # Split the text file into separate JSON strings
         json_strings = data.strip().split("\n")
-        box: Union[List[float], np.ndarray]
+        box: list[float] | np.ndarray
         _targets = []
         for json_string in json_strings:
             json_data = json.loads(json_string)

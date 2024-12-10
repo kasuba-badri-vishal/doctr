@@ -5,7 +5,7 @@
 
 import glob
 import os
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -31,7 +31,6 @@ class SynthText(VisionDataset):
     >>> img, target = train_set[0]
 
     Args:
-    ----
         train: whether the subset should be the training one
         use_polygons: whether polygons should be considered as rotated bounding box (instead of straight ones)
         recognition_task: whether the dataset should be used for recognition task
@@ -65,7 +64,7 @@ class SynthText(VisionDataset):
             )
 
         self.train = train
-        self.data: List[Tuple[Union[str, np.ndarray], Union[str, Dict[str, Any], np.ndarray]]] = []
+        self.data: list[tuple[str | np.ndarray, str | dict[str, Any] | np.ndarray]] = []
         np_dtype = np.float32
 
         # Load mat data

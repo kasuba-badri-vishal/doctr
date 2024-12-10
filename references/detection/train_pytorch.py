@@ -209,7 +209,7 @@ def main(args):
         pin_memory=torch.cuda.is_available(),
         collate_fn=val_set.collate_fn,
     )
-    print(f"Validation set loaded in {time.time() - st:.4}s ({len(val_set)} samples in " f"{len(val_loader)} batches)")
+    print(f"Validation set loaded in {time.time() - st:.4}s ({len(val_set)} samples in {len(val_loader)} batches)")
     with open(os.path.join(args.val_path, "labels.json"), "rb") as f:
         val_hash = hashlib.sha256(f.read()).hexdigest()
 
@@ -238,7 +238,7 @@ def main(args):
     elif torch.cuda.is_available():
         args.device = 0
     else:
-        logging.warning("No accessible GPU, targe device set to CPU.")
+        logging.warning("No accessible GPU, target device set to CPU.")
     if torch.cuda.is_available():
         torch.cuda.set_device(args.device)
         model = model.cuda()
@@ -316,7 +316,7 @@ def main(args):
         pin_memory=torch.cuda.is_available(),
         collate_fn=train_set.collate_fn,
     )
-    print(f"Train set loaded in {time.time() - st:.4}s ({len(train_set)} samples in " f"{len(train_loader)} batches)")
+    print(f"Train set loaded in {time.time() - st:.4}s ({len(train_set)} samples in {len(train_loader)} batches)")
     with open(os.path.join(args.train_path, "labels.json"), "rb") as f:
         train_hash = hashlib.sha256(f.read()).hexdigest()
 
@@ -427,9 +427,9 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument("train_path", type=str, help="path to training data folder")
-    parser.add_argument("val_path", type=str, help="path to validation data folder")
     parser.add_argument("arch", type=str, help="text-detection model to train")
+    parser.add_argument("--train_path", type=str, required=True, help="path to training data folder")
+    parser.add_argument("--val_path", type=str, required=True, help="path to validation data folder")
     parser.add_argument("--name", type=str, default=None, help="Name of your training experiment")
     parser.add_argument("--epochs", type=int, default=10, help="number of epochs to train the model on")
     parser.add_argument("-b", "--batch_size", type=int, default=2, help="batch size for training")

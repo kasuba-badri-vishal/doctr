@@ -5,6 +5,10 @@
 
 import os
 
+from doctr.file_utils import ensure_keras_v2
+
+ensure_keras_v2()
+
 from doctr.file_utils import CLASS_NAME
 
 os.environ["USE_TF"] = "1"
@@ -14,7 +18,7 @@ import time
 from pathlib import Path
 
 import tensorflow as tf
-from keras import mixed_precision
+from tensorflow.keras import mixed_precision
 from tqdm import tqdm
 
 gpu_devices = tf.config.list_physical_devices("GPU")
@@ -36,7 +40,7 @@ def evaluate(model, val_loader, batch_transforms, val_metric):
     for images, targets in tqdm(val_loader):
         images = batch_transforms(images)
         targets = [{CLASS_NAME: t} for t in targets]
-        out = model(images, targets, training=False, return_preds=True)
+        out = model(images, target=targets, training=False, return_preds=True)
         # Compute metric
         loc_preds = out["preds"]
         for target, loc_pred in zip(targets, loc_preds):
@@ -108,7 +112,7 @@ def main(args):
         drop_last=False,
         shuffle=False,
     )
-    print(f"Test set loaded in {time.time() - st:.4}s ({len(ds)} samples in " f"{len(test_loader)} batches)")
+    print(f"Test set loaded in {time.time() - st:.4}s ({len(ds)} samples in {len(test_loader)} batches)")
 
     batch_transforms = T.Normalize(mean=mean, std=std)
 
@@ -118,8 +122,7 @@ def main(args):
     print("Running evaluation")
     val_loss, recall, precision, mean_iou = evaluate(model, test_loader, batch_transforms, metric)
     print(
-        f"Validation loss: {val_loss:.6} (Recall: {recall:.2%} | Precision: {precision:.2%} | "
-        f"Mean IoU: {mean_iou:.2%})"
+        f"Validation loss: {val_loss:.6} (Recall: {recall:.2%} | Precision: {precision:.2%} | Mean IoU: {mean_iou:.2%})"
     )
 
 

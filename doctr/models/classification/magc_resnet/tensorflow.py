@@ -6,21 +6,21 @@
 import math
 from copy import deepcopy
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import tensorflow as tf
-from keras import activations, layers
-from keras.models import Sequential
+from tensorflow.keras import activations, layers
+from tensorflow.keras.models import Sequential
 
 from doctr.datasets import VOCABS
 
-from ...utils import load_pretrained_params
+from ...utils import _build_model, load_pretrained_params
 from ..resnet.tensorflow import ResNet
 
 __all__ = ["magc_resnet31"]
 
 
-default_cfgs: Dict[str, Dict[str, Any]] = {
+default_cfgs: dict[str, dict[str, Any]] = {
     "magc_resnet31": {
         "mean": (0.694, 0.695, 0.693),
         "std": (0.299, 0.296, 0.301),
@@ -36,7 +36,6 @@ class MAGC(layers.Layer):
     <https://arxiv.org/pdf/1910.02562.pdf>`_.
 
     Args:
-    ----
         inplanes: input channels
         headers: number of headers to split channels
         attn_scale: if True, re-scale attention to counteract the variance distibutions
@@ -115,18 +114,18 @@ class MAGC(layers.Layer):
         # Context modeling: B, H, W, C  ->  B, 1, 1, C
         context = self.context_modeling(inputs)
         # Transform: B, 1, 1, C  ->  B, 1, 1, C
-        transformed = self.transform(context)
+        transformed = self.transform(context, **kwargs)
         return inputs + transformed
 
 
 def _magc_resnet(
     arch: str,
     pretrained: bool,
-    num_blocks: List[int],
-    output_channels: List[int],
-    stage_downsample: List[bool],
-    stage_conv: List[bool],
-    stage_pooling: List[Optional[Tuple[int, int]]],
+    num_blocks: list[int],
+    output_channels: list[int],
+    stage_downsample: list[bool],
+    stage_conv: list[bool],
+    stage_pooling: list[tuple[int, int] | None],
     origin_stem: bool = True,
     **kwargs: Any,
 ) -> ResNet:
@@ -152,6 +151,8 @@ def _magc_resnet(
         cfg=_cfg,
         **kwargs,
     )
+    _build_model(model)
+
     # Load pretrained parameters
     if pretrained:
         # The number of classes is not the same as the number of classes in the pretrained model =>
@@ -175,12 +176,10 @@ def magc_resnet31(pretrained: bool = False, **kwargs: Any) -> ResNet:
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the ResNet architecture
 
     Returns:
-    -------
         A feature extractor model
     """
     return _magc_resnet(

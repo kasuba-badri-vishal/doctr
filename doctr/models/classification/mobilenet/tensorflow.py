@@ -6,14 +6,14 @@
 # Greatly inspired by https://github.com/pytorch/vision/blob/master/torchvision/models/mobilenetv3.py
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import tensorflow as tf
-from keras import layers
-from keras.models import Sequential
+from tensorflow.keras import layers
+from tensorflow.keras.models import Sequential
 
 from ....datasets import VOCABS
-from ...utils import conv_sequence, load_pretrained_params
+from ...utils import _build_model, conv_sequence, load_pretrained_params
 
 __all__ = [
     "MobileNetV3",
@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-default_cfgs: Dict[str, Dict[str, Any]] = {
+default_cfgs: dict[str, dict[str, Any]] = {
     "mobilenet_v3_large": {
         "mean": (0.694, 0.695, 0.693),
         "std": (0.299, 0.296, 0.301),
@@ -76,7 +76,7 @@ def hard_swish(x: tf.Tensor) -> tf.Tensor:
     return x * tf.nn.relu6(x + 3.0) / 6.0
 
 
-def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> int:
+def _make_divisible(v: float, divisor: int, min_value: int | None = None) -> int:
     if min_value is None:
         min_value = divisor
     new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
@@ -112,7 +112,7 @@ class InvertedResidualConfig:
         out_channels: int,
         use_se: bool,
         activation: str,
-        stride: Union[int, Tuple[int, int]],
+        stride: int | tuple[int, int],
         width_mult: float = 1,
     ) -> None:
         self.input_channels = self.adjust_channels(input_channels, width_mult)
@@ -132,7 +132,6 @@ class InvertedResidual(layers.Layer):
     """InvertedResidual for mobilenet
 
     Args:
-    ----
         conf: configuration object for inverted residual
     """
 
@@ -201,12 +200,12 @@ class MobileNetV3(Sequential):
 
     def __init__(
         self,
-        layout: List[InvertedResidualConfig],
+        layout: list[InvertedResidualConfig],
         include_top: bool = True,
         head_chans: int = 1024,
         num_classes: int = 1000,
-        cfg: Optional[Dict[str, Any]] = None,
-        input_shape: Optional[Tuple[int, int, int]] = None,
+        cfg: dict[str, Any] | None = None,
+        input_shape: tuple[int, int, int] | None = None,
     ) -> None:
         _layers = [
             Sequential(
@@ -295,6 +294,8 @@ def _mobilenet_v3(arch: str, pretrained: bool, rect_strides: bool = False, **kwa
         cfg=_cfg,
         **kwargs,
     )
+    _build_model(model)
+
     # Load pretrained parameters
     if pretrained:
         # The number of classes is not the same as the number of classes in the pretrained model =>
@@ -318,12 +319,10 @@ def mobilenet_v3_small(pretrained: bool = False, **kwargs: Any) -> MobileNetV3:
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the MobileNetV3 architecture
 
     Returns:
-    -------
         a keras.Model
     """
     return _mobilenet_v3("mobilenet_v3_small", pretrained, False, **kwargs)
@@ -341,12 +340,10 @@ def mobilenet_v3_small_r(pretrained: bool = False, **kwargs: Any) -> MobileNetV3
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the MobileNetV3 architecture
 
     Returns:
-    -------
         a keras.Model
     """
     return _mobilenet_v3("mobilenet_v3_small_r", pretrained, True, **kwargs)
@@ -364,12 +361,10 @@ def mobilenet_v3_large(pretrained: bool = False, **kwargs: Any) -> MobileNetV3:
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the MobileNetV3 architecture
 
     Returns:
-    -------
         a keras.Model
     """
     return _mobilenet_v3("mobilenet_v3_large", pretrained, False, **kwargs)
@@ -387,12 +382,10 @@ def mobilenet_v3_large_r(pretrained: bool = False, **kwargs: Any) -> MobileNetV3
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the MobileNetV3 architecture
 
     Returns:
-    -------
         a keras.Model
     """
     return _mobilenet_v3("mobilenet_v3_large_r", pretrained, True, **kwargs)
@@ -410,12 +403,10 @@ def mobilenet_v3_small_crop_orientation(pretrained: bool = False, **kwargs: Any)
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the MobileNetV3 architecture
 
     Returns:
-    -------
         a keras.Model
     """
     return _mobilenet_v3("mobilenet_v3_small_crop_orientation", pretrained, include_top=True, **kwargs)
@@ -433,12 +424,10 @@ def mobilenet_v3_small_page_orientation(pretrained: bool = False, **kwargs: Any)
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the MobileNetV3 architecture
 
     Returns:
-    -------
         a keras.Model
     """
     return _mobilenet_v3("mobilenet_v3_small_page_orientation", pretrained, include_top=True, **kwargs)

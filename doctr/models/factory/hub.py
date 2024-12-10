@@ -27,8 +27,6 @@ from doctr.file_utils import is_tf_available, is_torch_available
 
 if is_torch_available():
     import torch
-elif is_tf_available():
-    import tensorflow as tf
 
 __all__ = ["login_to_hub", "push_to_hf_hub", "from_hub", "_save_model_and_config_for_hf_hub"]
 
@@ -63,7 +61,6 @@ def _save_model_and_config_for_hf_hub(model: Any, save_dir: str, arch: str, task
     """Save model and config to disk for pushing to huggingface hub
 
     Args:
-    ----
         model: TF or PyTorch model to be saved
         save_dir: directory to save model and config
         arch: architecture name
@@ -76,8 +73,6 @@ def _save_model_and_config_for_hf_hub(model: Any, save_dir: str, arch: str, task
         torch.save(model.state_dict(), weights_path)
     elif is_tf_available():
         weights_path = save_directory / "tf_model.weights.h5"
-        # NOTE: `model.build` is not an option because it doesn't runs in eager mode
-        _ = model(tf.ones((1, *model.cfg["input_shape"])), training=False)
         model.save_weights(str(weights_path))
 
     config_path = save_directory / "config.json"
@@ -101,7 +96,6 @@ def push_to_hf_hub(model: Any, model_name: str, task: str, **kwargs) -> None:  #
     >>> push_to_hf_hub(model, 'my-model', 'recognition', arch='crnn_mobilenet_v3_small')
 
     Args:
-    ----
         model: TF or PyTorch model to be saved
         model_name: name of the model which is also the repository name
         task: task name
@@ -118,9 +112,9 @@ def push_to_hf_hub(model: Any, model_name: str, task: str, **kwargs) -> None:  #
     # default readme
     readme = textwrap.dedent(
         f"""
-    ---
+
     language: en
-    ---
+
 
     <p align="center">
     <img src="https://doctr-static.mindee.com/models?id=v0.3.1/Logo_doctr.gif&src=0" width="60%">
@@ -194,12 +188,10 @@ def from_hub(repo_id: str, **kwargs: Any):
     >>> model = from_hub("mindee/fasterrcnn_mobilenet_v3_large_fpn")
 
     Args:
-    ----
         repo_id: HuggingFace model hub repo
         kwargs: kwargs of `hf_hub_download` or `snapshot_download`
 
     Returns:
-    -------
         Model loaded with the checkpoint
     """
     # Get the config
@@ -229,8 +221,6 @@ def from_hub(repo_id: str, **kwargs: Any):
         model.load_state_dict(state_dict)
     else:  # tf
         weights = hf_hub_download(repo_id, filename="tf_model.weights.h5", **kwargs)
-        # NOTE: `model.build` is not an option because it doesn't runs in eager mode
-        _ = model(tf.ones((1, *model.cfg["input_shape"])), training=False)
         model.load_weights(weights)
 
     return model

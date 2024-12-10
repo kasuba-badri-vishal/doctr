@@ -4,22 +4,22 @@
 # See LICENSE or go to <https://opensource.org/licenses/Apache-2.0> for full license details.
 
 from copy import deepcopy
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import tensorflow as tf
-from keras import Sequential, layers
+from tensorflow.keras import Sequential, layers
 
 from doctr.datasets import VOCABS
 from doctr.models.modules.transformer import EncoderBlock
 from doctr.models.modules.vision_transformer.tensorflow import PatchEmbedding
 from doctr.utils.repr import NestedObject
 
-from ...utils import load_pretrained_params
+from ...utils import _build_model, load_pretrained_params
 
 __all__ = ["vit_s", "vit_b"]
 
 
-default_cfgs: Dict[str, Dict[str, Any]] = {
+default_cfgs: dict[str, dict[str, Any]] = {
     "vit_s": {
         "mean": (0.694, 0.695, 0.693),
         "std": (0.299, 0.296, 0.301),
@@ -41,7 +41,6 @@ class ClassifierHead(layers.Layer, NestedObject):
     """Classifier head for Vision Transformer
 
     Args:
-    ----
         num_classes: number of output classes
     """
 
@@ -61,7 +60,6 @@ class VisionTransformer(Sequential):
     <https://arxiv.org/pdf/2010.11929.pdf>`_.
 
     Args:
-    ----
         d_model: dimension of the transformer layers
         num_layers: number of transformer layers
         num_heads: number of attention heads
@@ -79,12 +77,12 @@ class VisionTransformer(Sequential):
         num_layers: int,
         num_heads: int,
         ffd_ratio: int,
-        patch_size: Tuple[int, int] = (4, 4),
-        input_shape: Tuple[int, int, int] = (32, 32, 3),
+        patch_size: tuple[int, int] = (4, 4),
+        input_shape: tuple[int, int, int] = (32, 32, 3),
         dropout: float = 0.0,
         num_classes: int = 1000,
         include_top: bool = True,
-        cfg: Optional[Dict[str, Any]] = None,
+        cfg: dict[str, Any] | None = None,
     ) -> None:
         _layers = [
             PatchEmbedding(input_shape, d_model, patch_size),
@@ -121,6 +119,8 @@ def _vit(
 
     # Build the model
     model = VisionTransformer(cfg=_cfg, **kwargs)
+    _build_model(model)
+
     # Load pretrained parameters
     if pretrained:
         # The number of classes is not the same as the number of classes in the pretrained model =>
@@ -146,12 +146,10 @@ def vit_s(pretrained: bool = False, **kwargs: Any) -> VisionTransformer:
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the VisionTransformer architecture
 
     Returns:
-    -------
         A feature extractor model
     """
     return _vit(
@@ -177,12 +175,10 @@ def vit_b(pretrained: bool = False, **kwargs: Any) -> VisionTransformer:
     >>> out = model(input_tensor)
 
     Args:
-    ----
         pretrained: boolean, True if model is pretrained
         **kwargs: keyword arguments of the VisionTransformer architecture
 
     Returns:
-    -------
         A feature extractor model
     """
     return _vit(

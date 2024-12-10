@@ -5,25 +5,20 @@
 
 import logging
 import platform
-from typing import Optional, Union
 
 from PIL import ImageFont
 
 __all__ = ["get_font"]
 
 
-def get_font(
-    font_family: Optional[str] = None, font_size: int = 13
-) -> Union[ImageFont.FreeTypeFont, ImageFont.ImageFont]:
+def get_font(font_family: str | None = None, font_size: int = 13) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Resolves a compatible ImageFont for the system
 
     Args:
-    ----
         font_family: the font family to use
         font_size: the size of the font upon rendering
 
     Returns:
-    -------
         the Pillow font
     """
     # Font selection

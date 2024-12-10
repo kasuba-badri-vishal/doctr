@@ -3,9 +3,9 @@
 # This program is licensed under the Apache License 2.0.
 # See LICENSE or go to <https://opensource.org/licenses/Apache-2.0> for full license details.
 
-from typing import Any, List
+from typing import Any
 
-from doctr.file_utils import is_tf_available
+from doctr.file_utils import is_tf_available, is_torch_available
 
 from .. import classification
 from ..preprocessor import PreProcessor
@@ -13,7 +13,7 @@ from .predictor import OrientationPredictor
 
 __all__ = ["crop_orientation_predictor", "page_orientation_predictor"]
 
-ARCHS: List[str] = [
+ARCHS: list[str] = [
     "magc_resnet31",
     "mobilenet_v3_small",
     "mobilenet_v3_small_r",
@@ -31,7 +31,7 @@ ARCHS: List[str] = [
     "vit_s",
     "vit_b",
 ]
-ORIENTATION_ARCHS: List[str] = ["mobilenet_v3_small_crop_orientation", "mobilenet_v3_small_page_orientation"]
+ORIENTATION_ARCHS: list[str] = ["mobilenet_v3_small_crop_orientation", "mobilenet_v3_small_page_orientation"]
 
 
 def _orientation_predictor(
@@ -48,7 +48,14 @@ def _orientation_predictor(
         # Load directly classifier from backbone
         _model = classification.__dict__[arch](pretrained=pretrained)
     else:
-        if not isinstance(arch, classification.MobileNetV3):
+        allowed_archs = [classification.MobileNetV3]
+        if is_torch_available():
+            # Adding the type for torch compiled models to the allowed architectures
+            from doctr.models.utils import _CompiledModule
+
+            allowed_archs.append(_CompiledModule)
+
+        if not isinstance(arch, tuple(allowed_archs)):
             raise ValueError(f"unknown architecture: {type(arch)}")
         _model = arch
 
@@ -63,7 +70,7 @@ def _orientation_predictor(
 
 
 def crop_orientation_predictor(
-    arch: Any = "mobilenet_v3_small_crop_orientation", pretrained: bool = False, **kwargs: Any
+    arch: Any = "mobilenet_v3_small_crop_orientation", pretrained: bool = False, batch_size: int = 128, **kwargs: Any
 ) -> OrientationPredictor:
     """Crop orientation classification architecture.
 
@@ -74,20 +81,19 @@ def crop_orientation_predictor(
     >>> out = model([input_crop])
 
     Args:
-    ----
         arch: name of the architecture to use (e.g. 'mobilenet_v3_small_crop_orientation')
         pretrained: If True, returns a model pre-trained on our recognition crops dataset
+        batch_size: number of samples the model processes in parallel
         **kwargs: keyword arguments to be passed to the OrientationPredictor
 
     Returns:
-    -------
         OrientationPredictor
     """
-    return _orientation_predictor(arch, pretrained, model_type="crop", **kwargs)
+    return _orientation_predictor(arch=arch, pretrained=pretrained, batch_size=batch_size, model_type="crop", **kwargs)
 
 
 def page_orientation_predictor(
-    arch: Any = "mobilenet_v3_small_page_orientation", pretrained: bool = False, **kwargs: Any
+    arch: Any = "mobilenet_v3_small_page_orientation", pretrained: bool = False, batch_size: int = 4, **kwargs: Any
 ) -> OrientationPredictor:
     """Page orientation classification architecture.
 
@@ -98,13 +104,12 @@ def page_orientation_predictor(
     >>> out = model([input_page])
 
     Args:
-    ----
         arch: name of the architecture to use (e.g. 'mobilenet_v3_small_page_orientation')
         pretrained: If True, returns a model pre-trained on our recognition crops dataset
+        batch_size: number of samples the model processes in parallel
         **kwargs: keyword arguments to be passed to the OrientationPredictor
 
     Returns:
-    -------
         OrientationPredictor
     """
-    return _orientation_predictor(arch, pretrained, model_type="page", **kwargs)
+    return _orientation_predictor(arch=arch, pretrained=pretrained, batch_size=batch_size, model_type="page", **kwargs)

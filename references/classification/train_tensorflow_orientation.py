@@ -5,6 +5,10 @@
 
 import os
 
+from doctr.file_utils import ensure_keras_v2
+
+ensure_keras_v2()
+
 os.environ["USE_TF"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -13,7 +17,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-from keras import Model, mixed_precision, optimizers
+from tensorflow.keras import Model, mixed_precision, optimizers
 from tqdm.auto import tqdm
 
 from doctr.models import login_to_hub, push_to_hf_hub
@@ -96,6 +100,11 @@ def record_lr(
     return lr_recorder[: len(loss_recorder)], loss_recorder
 
 
+@tf.function
+def apply_grads(optimizer, grads, model):
+    optimizer.apply_gradients(zip(grads, model.trainable_weights))
+
+
 def fit_one_epoch(model, train_loader, batch_transforms, optimizer, amp=False):
     # Iterate over the batches of the dataset
     pbar = tqdm(train_loader, position=1)
@@ -108,7 +117,7 @@ def fit_one_epoch(model, train_loader, batch_transforms, optimizer, amp=False):
         grads = tape.gradient(train_loss, model.trainable_weights)
         if amp:
             grads = optimizer.get_unscaled_gradients(grads)
-        optimizer.apply_gradients(zip(grads, model.trainable_weights))
+        apply_grads(optimizer, grads, model)
 
         pbar.set_description(f"Training loss: {train_loss.numpy().mean():.6}")
 
@@ -172,8 +181,7 @@ def main(args):
         collate_fn=collate_fn,
     )
     print(
-        f"Validation set loaded in {time.time() - st:.4}s ({len(val_set)} samples in "
-        f"{val_loader.num_batches} batches)"
+        f"Validation set loaded in {time.time() - st:.4}s ({len(val_set)} samples in {val_loader.num_batches} batches)"
     )
 
     # Load doctr model
@@ -187,8 +195,6 @@ def main(args):
 
     # Resume weights
     if isinstance(args.resume, str):
-        # Build the model first to load the weights
-        _ = model(tf.zeros((1, *input_size, 3)), training=False)
         model.load_weights(args.resume)
 
     batch_transforms = T.Compose([
@@ -229,8 +235,7 @@ def main(args):
         collate_fn=collate_fn,
     )
     print(
-        f"Train set loaded in {time.time() - st:.4}s ({len(train_set)} samples in "
-        f"{train_loader.num_batches} batches)"
+        f"Train set loaded in {time.time() - st:.4}s ({len(train_set)} samples in {train_loader.num_batches} batches)"
     )
 
     if args.show_samples:
@@ -331,7 +336,7 @@ def main(args):
 
     if args.export_onnx:
         print("Exporting model to ONNX...")
-        if args.arch == "vit_b":
+        if args.arch in ["vit_s", "vit_b"]:
             # fixed batch size for vit
             dummy_input = [tf.TensorSpec([1, *(input_size), 3], tf.float32, name="input")]
         else:
@@ -349,10 +354,10 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument("train_path", type=str, help="path to training data folder")
-    parser.add_argument("val_path", type=str, help="path to validation data folder")
     parser.add_argument("arch", type=str, help="classification model to train")
-    parser.add_argument("type", type=str, choices=["page", "crop"], help="type of data to train on")
+    parser.add_argument("--type", type=str, required=True, choices=["page", "crop"], help="type of data to train on")
+    parser.add_argument("--train_path", type=str, help="path to training data folder")
+    parser.add_argument("--val_path", type=str, required=True, help="path to validation data folder")
     parser.add_argument("--name", type=str, default=None, help="Name of your training experiment")
     parser.add_argument("--epochs", type=int, default=10, help="number of epochs to train the model on")
     parser.add_argument("-b", "--batch_size", type=int, default=2, help="batch size for training")

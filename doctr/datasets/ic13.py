@@ -6,7 +6,7 @@
 import csv
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 from tqdm import tqdm
@@ -33,7 +33,6 @@ class IC13(AbstractDataset):
     >>> img, target = test_set[0]
 
     Args:
-    ----
         img_folder: folder with all the images of the dataset
         label_folder: folder with all annotation files for the images
         use_polygons: whether polygons should be considered as rotated bounding box (instead of straight ones)
@@ -66,7 +65,7 @@ class IC13(AbstractDataset):
                 f"unable to locate {label_folder if not os.path.exists(label_folder) else img_folder}"
             )
 
-        self.data: List[Tuple[Union[Path, np.ndarray], Union[str, Dict[str, Any], np.ndarray]]] = []
+        self.data: list[tuple[Path | np.ndarray, str | dict[str, Any] | np.ndarray]] = []
         np_dtype = np.float32
 
         img_names = os.listdir(img_folder)
